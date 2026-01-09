@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dumanı Bırak, Hayatı Bırakma</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (JSX Derleyicisi) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Lucide Icons (Global) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Mobil güvenli alanlar ve özel animasyonlar */
+        .pb-safe { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+        
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+        
+        .perspective-1000 { perspective: 1000px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 text-sm sm:text-base">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICON HELPER ---
+        const LucideIcon = ({ name, size = 24, color = "currentColor", className = "", ...props }) => {
+            const iconData = window.lucide.icons[name];
+            if (!iconData) return null;
+
+            return React.createElement(
+                'svg',
+                {
+                    xmlns: "http://www.w3.org/2000/svg",
+                    width: size,
+                    height: size,
+                    viewBox: "0 0 24 24",
+                    fill: "none",
+                    stroke: color,
+                    strokeWidth: 2,
+                    strokeLinecap: "round",
+                    strokeLinejoin: "round",
+                    className: className,
+                    ...props
+                },
+                ...iconData.map(([tag, attrs], index) => 
+                    React.createElement(tag, { ...attrs, key: index })
+                )
+            );
+        };
+
+        const Heart = (p) => <LucideIcon name="Heart" {...p} />;
+        const Brain = (p) => <LucideIcon name="Brain" {...p} />;
+        const Wind = (p) => <LucideIcon name="Wind" {...p} />;
+        const Activity = (p) => <LucideIcon name="Activity" {...p} />;
+        const Coffee = (p) => <LucideIcon name="Coffee" {...p} />;
+        const Utensils = (p) => <LucideIcon name="Utensils" {...p} />;
+        const Users = (p) => <LucideIcon name="Users" {...p} />;
+        const Zap = (p) => <LucideIcon name="Zap" {...p} />;
+        const Trophy = (p) => <LucideIcon name="Trophy" {...p} />;
+        const RefreshCw = (p) => <LucideIcon name="RefreshCw" {...p} />;
+        const Clock = (p) => <LucideIcon name="Clock" {...p} />;
+        const ShieldCheck = (p) => <LucideIcon name="ShieldCheck" {...p} />;
+        const Gamepad2 = (p) => <LucideIcon name="Gamepad2" {...p} />;
+        const BookOpen = (p) => <LucideIcon name="BookOpen" {...p} />;
+        const AlertTriangle = (p) => <LucideIcon name="AlertTriangle" {...p} />;
+        const XCircle = (p) => <LucideIcon name="XCircle" {...p} />;
+        const CheckCircle = (p) => <LucideIcon name="CheckCircle" {...p} />;
+        const Flame = (p) => <LucideIcon name="Flame" {...p} />;
+        const Car = (p) => <LucideIcon name="Car" {...p} />;
+        const Phone = (p) => <LucideIcon name="Phone" {...p} />;
+        const Briefcase = (p) => <LucideIcon name="Briefcase" {...p} />;
+        const Moon = (p) => <LucideIcon name="Moon" {...p} />;
+        const Sun = (p) => <LucideIcon name="Sun" {...p} />;
+        const Smile = (p) => <LucideIcon name="Smile" {...p} />;
+        const List = (p) => <LucideIcon name="List" {...p} />;
+        const Sparkles = (p) => <LucideIcon name="Sparkles" {...p} />;
+        const Anchor = (p) => <LucideIcon name="Anchor" {...p} />;
+        const Unlock = (p) => <LucideIcon name="Unlock" {...p} />;
+        const Eye = (p) => <LucideIcon name="Eye" {...p} />;
+        const Feather = (p) => <LucideIcon name="Feather" {...p} />;
+        const Mountain = (p) => <LucideIcon name="Mountain" {...p} />;
+        const Play = (p) => <LucideIcon name="Play" {...p} />;
+        const Target = (p) => <LucideIcon name="Target" {...p} />;
+        const MapPin = (p) => <LucideIcon name="MapPin" {...p} />;
+        const LifeBuoy = (p) => <LucideIcon name="LifeBuoy" {...p} />;
+
+        // --- VERİLER ---
+        const mindsetStrategies = [
+            { id: 1, icon: <ShieldCheck className="w-6 h-6 text-indigo-600" />, concept: "Kimlik Değişimi", desc: "'Sigarayı bırakmaya çalışıyorum' deme. Bu, bir fedakarlık ima eder. 'Ben sigara kullanmıyorum' de. Bu, bir seçim ve özgürlüktür.", color: "bg-indigo-50 border-indigo-200" },
+            { id: 2, icon: <Flame className="w-6 h-6 text-orange-600" />, concept: "Küçük Canavar", desc: "İstek, vücudundaki nikotin canavarının ölürken attığı çığlıktır. Ona sigara verirsen canlanır, vermezsen ölür. Şu an hissettiğin, zaferin sesidir.", color: "bg-orange-50 border-orange-200" },
+            { id: 3, icon: <Brain className="w-6 h-6 text-pink-600" />, concept: "Fedakarlık İllüzyonu", desc: "Değerli bir dosttan ayrılmıyorsun. Seni sürekli huzursuz eden, sadece kendi yarattığı boşluğu dolduran toksik bir ilişkiden kurtuluyorsun.", color: "bg-pink-50 border-pink-200" },
+            { id: 4, icon: <Unlock className="w-6 h-6 text-emerald-600" />, concept: "Zincirleri Kırmak", desc: "Sigara içmek bir ödül değil, bir zincirdir. İçmeyenler 'keşke şu an bir duman olsa' diye acı çekmezler. Sen sadece onların normal huzur seviyesine dönmeye çalışıyordun.", color: "bg-emerald-50 border-emerald-200" },
+            { id: 5, icon: <Eye className="w-6 h-6 text-blue-600" />, concept: "Kıskanma, Acı", desc: "Sigara içen birini gördüğünde 'Ne güzel keyif yapıyor' deme. O, senin sahip olduğun huzura kavuşmak için kendini zehirlemek zorunda kalan biri.", color: "bg-blue-50 border-blue-200" },
+            { id: 6, icon: <Anchor className="w-6 h-6 text-gray-600" />, concept: "Boşluk Yalanı", desc: "Sigara stresi almaz, stres yaratır. O 'oh be' hissi, dar ayakkabıyı çıkarınca gelen rahatlamadır. Ayakkabın zaten dardı (nikotin yoksunluğu), sigara sadece geçici çıkardı.", color: "bg-gray-50 border-gray-200" },
+            { id: 7, icon: <Zap className="w-6 h-6 text-yellow-600" />, concept: "Can Sıkıntısı Efsanesi", desc: "Sigara can sıkıntısını geçirmez, uyuşukluk verir. Gerçek enerji ve merak duygusu, beynin dopamin reseptörleri iyileşince geri gelir.", color: "bg-yellow-50 border-yellow-200" },
+            { id: 8, icon: <Mountain className="w-6 h-6 text-purple-600" />, concept: "Zirveye Tırmanış", desc: "Şu an yokuş yukarı çıkıyorsun ve nefesin kesiliyor olabilir. Ama manzara (özgürlük) sadece tepeye vardığında görünür. Geri dönmek sadece yokuşu uzatır.", color: "bg-purple-50 border-purple-200" },
+            { id: 9, icon: <Feather className="w-6 h-6 text-teal-600" />, concept: "Hafiflik Hissi", desc: "Artık 'sigaram var mı', 'çakmağım nerede', 'burada içilir mi' derdi yok. Zihinsel yükünü attın. Sadece anı yaşa.", color: "bg-teal-50 border-teal-200" },
+            { id: 10, icon: <Clock className="w-6 h-6 text-red-600" />, concept: "Sadece Bugün", desc: "'Ömrümün sonuna kadar içmeyecek miyim?' diye düşünme. Bu yük ağır gelir. Sadece bugün içme. Yarınla yarın ilgilenirsin.", color: "bg-red-50 border-red-200" },
+            { id: 11, icon: <XCircle className="w-6 h-6 text-rose-600" />, concept: "Tek Sigara Tuzağı", desc: "'Sadece bir tane' diye bir şey yoktur. O ilki, milyonlarcasını tetikleyen domino taşıdır. O ilk taşı devirme.", color: "bg-rose-50 border-rose-200" },
+            { id: 12, icon: <Activity className="w-6 h-6 text-cyan-600" />, concept: "Duygu Sörfü", desc: "İstek bir dalgadır. Üzerine gelince korkma, altında kalma. Sörf tahtanı al ve dalganın geçmesini bekle. Her dalga kıyıya vurup yok olur.", color: "bg-cyan-50 border-cyan-200" },
+            { id: 13, icon: <CheckCircle className="w-6 h-6 text-green-600" />, concept: "Kaptan Sensin", desc: "Yıllardır dümeni kimyasallara vermiştin. 'Şimdi iç', 'şimdi bekle' diyen o sesti. Artık geminin kaptanı sensin. Rotayı sen çiziyorsun.", color: "bg-green-50 border-green-200" },
+            { id: 14, icon: <Users className="w-6 h-6 text-indigo-500" />, concept: "Sosyal Yapıştırıcı Efsanesi", desc: "Sigara sosyalleştirmez, seni 'sigara içenler alanına' hapseder. Gerçek sohbet dumanla değil, kelimelerle ve göz temasıyla yapılır.", color: "bg-indigo-100 border-indigo-200" },
+            { id: 15, icon: <Moon className="w-6 h-6 text-slate-600" />, concept: "Gerçek Uyku", desc: "Sigara içenler gece nikotin çekilmesinden dolayı huzursuz uyur. Vücudun yıllar sonra ilk defa gerçek, derin dinlenmeyi öğreniyor.", color: "bg-slate-50 border-slate-200" },
+            { id: 16, icon: <Sun className="w-6 h-6 text-amber-600" />, concept: "Sabah Zaferi", desc: "Güne ağzında pas tadı ve suçlulukla başlamamak... Sadece bu his bile özgürlüğe değer.", color: "bg-amber-50 border-amber-200" },
+            { id: 17, icon: <RefreshCw className="w-6 h-6 text-lime-600" />, concept: "Odaklanma Yalanı", desc: "Sigara odaklanmanı sağlamaz; nikotin yoksunluğunun yarattığı dikkat dağınıklığını giderir. İçmeyenler zaten sürekli odaklanabilir.", color: "bg-lime-50 border-lime-200" },
+            { id: 18, icon: <ShieldCheck className="w-6 h-6 text-violet-600" />, concept: "Gizli Utanç", desc: "Artık çocuklardan saklanmak, üzerine parfüm sıkıp kokuyu gizlemeye çalışmak yok. Başın dik, saklayacak bir şeyin yok.", color: "bg-violet-50 border-violet-200" },
+            { id: 19, icon: <Wind className="w-6 h-6 text-sky-600" />, concept: "Nefesin Gücü", desc: "Sigara içerken rahatlamanın sebebi duman değil, derin nefes almaktı. Şimdi duman olmadan derin nefes al. Oksijen en doğal sakinleştiricidir.", color: "bg-sky-50 border-sky-200" },
+            { id: 20, icon: <Heart className="w-6 h-6 text-pink-500" />, concept: "Kendine Şefkat", desc: "Kriz geldiğinde kendine kızma. 'Vücudum iyileşmeye çalışıyor, bu sancı iyileşme belirtisi' diyerek kendine şefkat göster.", color: "bg-pink-100 border-pink-200" },
+            { id: 21, icon: <BookOpen className="w-6 h-6 text-stone-600" />, concept: "Hikayeni Değiştir", desc: "Eski hikaye: 'Sigarasız yapamam'. Yeni hikaye: 'Hayatın tadını filtresiz, araya duman girmeden çıkarıyorum'.", color: "bg-stone-50 border-stone-200" },
+            { id: 22, icon: <Smile className="w-6 h-6 text-yellow-500" />, concept: "Mutluluk Eşiği", desc: "Sigara mutluluk vermez, sadece mutsuzluğu (çekilmeyi) dondurur. Şimdi dopamin seviyelerin doğal yolla yükselmeye başlıyor.", color: "bg-yellow-100 border-yellow-200" },
+            { id: 23, icon: <Coffee className="w-6 h-6 text-orange-800" />, concept: "Tatların Dönüşü", desc: "Kahvenin, yemeğin tadı gerçekten böyle miydi? Yıllardır dünyayı buğulu bir camın ardından izliyordun, cam silindi.", color: "bg-orange-100 border-orange-200" },
+            { id: 24, icon: <Gamepad2 className="w-6 h-6 text-fuchsia-600" />, concept: "Ellerin Boş Kalması", desc: "Ellerin boş değil, ellerin serbest. Onlarla yaratabilir, dokunabilir, üretebilirsin. Sigara tutmak zorunda değilsin.", color: "bg-fuchsia-50 border-fuchsia-200" },
+            { id: 25, icon: <Activity className="w-6 h-6 text-red-500" />, concept: "HALT Yöntemi", desc: "İstek geldiğinde dur ve sor: Aç mısın (Hungry), Öfkeli misin (Angry), Yalnız mısın (Lonely), Yorgun musun (Tired)? İhtiyacın duman değil, bunlardan biri.", color: "bg-red-100 border-red-200" },
+            { id: 26, icon: <Briefcase className="w-6 h-6 text-zinc-600" />, concept: "Ödül Mekanizması", desc: "Bir işi bitirince sigara yakmak, kendine 'aferin' demek için zehir yutmaktır. Gerçek ödül; bir mola, bir meyve, kısa bir yürüyüştür.", color: "bg-zinc-50 border-zinc-200" },
+            { id: 27, icon: <Car className="w-6 h-6 text-blue-700" />, concept: "Otopilotu Kapat", desc: "Çoğu sigara bilinçsizce yakılır. Farkındalığını aç. Kriz geldiğinde 'Bunu şu an ben mi istiyorum, yoksa bağımlılık mı?' diye sor.", color: "bg-blue-100 border-blue-200" },
+            { id: 28, icon: <Sparkles className="w-6 h-6 text-amber-500" />, concept: "Nostalji Tuzağı", desc: "Geçmişteki 'güzel' sigara anılarını hatırladığında, o anki öksürüğü, ağız kokusunu ve pişmanlığı da hatırla. Montaj yapma, filmin tamamını izle.", color: "bg-amber-100 border-amber-200" },
+            { id: 29, icon: <AlertTriangle className="w-6 h-6 text-orange-500" />, concept: "Karar Yorgunluğu", desc: "Paket bitti mi, gece açık yer var mı, yanıma aldım mı... Bu sorular bitti. Zihnin artık daha önemli kararlar için boş.", color: "bg-orange-100 border-orange-200" },
+            { id: 30, icon: <Trophy className="w-6 h-6 text-yellow-600" />, concept: "Büyük Resim", desc: "Bir şeyden vazgeçmiyorsun. Sağlık, enerji, özgüven, özgürlük ve zaman kazanıyorsun. Takas harika.", color: "bg-yellow-50 border-yellow-200" }
+        ];
+
+        const triggersData = [
+            { id: 1, title: "Sabah İlk Uyanış", icon: <Sun className="text-yellow-500" />, desc: "Güne sigarasız başlamak zor geliyorsa...", solution: "Rutini boz. Uyanır uyanmaz bir bardak ılık su iç. Kahvaltını her zamankinden farklı bir odada veya sandalyede yap. Duş alarak güne başla." },
+            { id: 2, title: "Yemek Sonrası", icon: <Utensils className="text-orange-500" />, desc: "Mide dolunca gelen o güçlü 'keyif' isteği.", solution: "Masada oyalanma, hemen kalk. Dişlerini fırçala (naneli tat isteği azaltır). Bulaşıkları yıka veya ellerini meşgul edecek bir meyve soy." },
+            { id: 3, title: "Kahve Molası", icon: <Coffee className="text-brown-500" />, desc: "Kahve ve sigara ikilisi beynine kazınmışsa.", solution: "İçeceğini değiştir (bitki çayı, soda). Kahveyi mutlaka içeceksen, her zaman oturduğun 'sigara köşesi'nde değil, ayakta veya başka odada iç." },
+            { id: 4, title: "Araba Kullanmak", icon: <Car className="text-blue-500" />, desc: "Trafikte veya uzun yolda el alışkanlığı.", solution: "Arabanı detaylı temizlet, sigara kokusunu yok et. Sakız çiğne veya çekirdek çitle. Yüksek sesle şarkı söyle veya podcast dinle." },
+            { id: 5, title: "Stresli Anlar", icon: <Zap className="text-red-500" />, desc: "Sinirlenince 'bir tane yakayım' refleksi.", solution: "Sigara stresi azaltmaz, sadece nikotin yoksunluğunu giderir. Odanı değiştir, camı aç, 10 kez derin nefes al. Stres topu sık." },
+            { id: 6, title: "Telefon Görüşmeleri", icon: <Phone className="text-purple-500" />, desc: "Uzun konuşmalarda elin boş kalması.", solution: "Konuşurken volta at (yürü). Elinde bir kalemle oyna veya karalamalar yap. Telefonu diğer elinde tut." },
+            { id: 7, title: "Bir İşi Bitirmek", icon: <Briefcase className="text-slate-500" />, desc: "Ödül olarak sigara içme alışkanlığı.", solution: "Ödülünü değiştir. Bir parça çikolata ye, sosyal medyada 5 dakika gezin, bir esneme hareketi yap veya sadece arkana yaslanıp su iç." },
+            { id: 8, title: "Sosyal Ortamlar", icon: <Users className="text-green-500" />, desc: "Arkadaşların içerken dayanmak.", solution: "İlk 2 hafta sigara içilen ortamlardan kaçın. Gittiğinde elinde sürekli bir içecek veya kürdan olsun. 'Bıraktım' deme, 'İçmiyorum' de." },
+            { id: 9, title: "Gece Oturmaları", icon: <Moon className="text-indigo-400" />, desc: "Sessizlik ve boşluk anları.", solution: "Ellerini meşgul edecek bir hobi bul (yapboz, örgü, çizim). Dişlerini erken fırçala. Naneli şeker ye." },
+            { id: 10, title: "Bekleme Süreleri", icon: <Clock className="text-gray-500" />, desc: "Otobüs beklerken veya birini beklerken.", solution: "Telefonunda bir oyun oyna (Panic butonu oyunları). Haberleri oku. Çevrendeki 5 kırmızı nesneyi bulmaya çalış (zihni dağıt)." }
+        ];
+
+        // --- VERİ: İLETİŞİM & DESTEK (BURSA & GENEL) ---
+        const supportContacts = [
+            {
+                id: 1,
+                title: "ALO 171 Sigara Bırakma Hattı",
+                phone: "171",
+                address: "Sağlık Bakanlığı 7/24 Danışma Hattı",
+                type: "general",
+                color: "bg-green-100 text-green-800"
+            },
+            {
+                id: 2,
+                title: "YEDAM (Yeşilay Danışmanlık)",
+                phone: "115",
+                address: "Cumhuriyet Cad. No:2 Osmangazi/BURSA",
+                type: "general",
+                color: "bg-green-100 text-green-800"
+            },
+            {
+                id: 3,
+                title: "Bursa Şehir Hastanesi",
+                phone: "182",
+                address: "Sigara Bırakma Polikliniği - Nilüfer",
+                type: "clinic",
+                color: "bg-blue-50 text-blue-800"
+            },
+            {
+                id: 4,
+                title: "Yüksek İhtisas EAH",
+                phone: "0224 295 50 00",
+                address: "Mimar Sinan Mah. Emniyet Cad. Yıldırım",
+                type: "clinic",
+                color: "bg-blue-50 text-blue-800"
+            },
+            {
+                id: 5,
+                title: "Çekirge Devlet Hastanesi",
+                phone: "0224 239 36 36",
+                address: "Hüdavendigar Mah. Osmangazi",
+                type: "clinic",
+                color: "bg-blue-50 text-blue-800"
+            },
+            {
+                id: 6,
+                title: "Nilüfer Sağlıklı Hayat Merkezi",
+                phone: "0224 453 17 80",
+                address: "Fethiye Mah. Duyum Sok. No:13/A",
+                type: "clinic",
+                color: "bg-teal-50 text-teal-800"
+            }
+        ];
+
+        const timelineData = [
+            { time: "20 Dakika", benefit: "Nabız normale döner. (Küçük canavar ilk darbeyi aldı!)" },
+            { time: "8 Saat", benefit: "Kandaki oksijen artar. Karbonmonoksit azalır." },
+            { time: "24 Saat", benefit: "Kalp krizi riski şimdiden düşmeye başladı." },
+            { time: "48 Saat", benefit: "Tat ve koku alma duyuları canlanır. Yemeklerin tadı değişiyor!" },
+            { time: "3 Gün", benefit: "Nikotin vücuttan tamamen atıldı. En zor kısım bitti." },
+            { time: "2 Hafta", benefit: "Dolaşım düzeldi, yokuş çıkmak artık daha kolay." },
+            { time: "1 Yıl", benefit: "Kalp hastalığı riski yarı yarıya düştü. Özgürsün!" },
+        ];
+
+        // --- BİLEŞEN 1: HAFIZA OYUNU (EŞLEŞTİRME) ---
+
+        const MemoryGame = ({ onComplete }) => {
+            const [cards, setCards] = useState([]);
+            const [choiceOne, setChoiceOne] = useState(null);
+            const [choiceTwo, setChoiceTwo] = useState(null);
+            const [disabled, setDisabled] = useState(false);
+            const [matches, setMatches] = useState(0);
+            const [timer, setTimer] = useState(0);
+            const [gameWon, setGameWon] = useState(false);
+            const [gameStarted, setGameStarted] = useState(false); // Oyun başladı mı kontrolü
+            const timerRef = useRef(null);
+
+            const cardImages = [
+                { src: "🚭", matched: false }, { src: "💪", matched: false },
+                { src: "🥗", matched: false }, { src: "🏃", matched: false },
+                { src: "💧", matched: false }, { src: "🧘", matched: false },
+                { src: "🌞", matched: false }, { src: "🌲", matched: false },
+            ];
+
+            const shuffleCards = () => {
+                const shuffledCards = [...cardImages, ...cardImages]
+                    .sort(() => Math.random() - 0.5)
+                    .map((card) => ({ ...card, id: Math.random() }));
+                
+                setChoiceOne(null);
+                setChoiceTwo(null);
+                setCards(shuffledCards);
+                setMatches(0);
+                setTimer(0);
+                setGameWon(false);
+                setGameStarted(false); // Durumu sıfırla
+                
+                if (timerRef.current) clearInterval(timerRef.current);
+            };
+
+            const handleChoice = (card) => {
+                // İlk karta tıklandığında süreyi başlat
+                if (!gameStarted) {
+                    setGameStarted(true);
+                    if (timerRef.current) clearInterval(timerRef.current);
+                    timerRef.current = setInterval(() => {
+                        setTimer(prev => prev + 1);
+                    }, 1000);
+                }
+                choiceOne ? setChoiceTwo(card) : setChoiceOne(card);
+            };
+
+            useEffect(() => {
+                if (choiceOne && choiceTwo) {
+                    setDisabled(true);
+                    if (choiceOne.src === choiceTwo.src) {
+                        setCards(prevCards => {
+                            return prevCards.map(card => {
+                                if (card.src === choiceOne.src) {
+                                    return { ...card, matched: true };
+                                } else {
+                                    return card;
+                                }
+                            });
+                        });
+                        setMatches(prev => prev + 1);
+                        resetTurn();
+                    } else {
+                        setTimeout(() => resetTurn(), 1000);
+                    }
+                }
+            }, [choiceOne, choiceTwo]);
+
+            useEffect(() => {
+                if (matches === 8) { // 8 çift tamamlandığında
+                    if (timerRef.current) clearInterval(timerRef.current);
+                    setGameWon(true);
+                }
+            }, [matches]);
+
+            useEffect(() => {
+                shuffleCards();
+                return () => {
+                    if (timerRef.current) clearInterval(timerRef.current);
+                }
+            }, []);
+
+            const resetTurn = () => {
+                setChoiceOne(null);
+                setChoiceTwo(null);
+                setDisabled(false);
+            };
+
+            return (
+                <div className="bg-white p-6 rounded-2xl shadow-lg border-2 border-indigo-100 flex flex-col items-center">
+                    <div className="flex justify-between w-full mb-4 items-center">
+                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <Brain className="text-indigo-600" size={20}/> Hafıza Eşleştirme
+                        </h3>
+                        <div className="flex items-center gap-3">
+                            <span className={`text-sm font-mono font-bold px-2 py-1 rounded transition-colors ${gameStarted ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 bg-gray-100'}`}>
+                                {Math.floor(timer / 60).toString().padStart(2, '0')}:{Math.floor(timer % 60).toString().padStart(2, '0')}
+                            </span>
+                            <button onClick={shuffleCards} className="text-sm text-indigo-600 font-bold flex items-center gap-1 hover:underline">
+                                <RefreshCw size={16} /> Yenile
+                            </button>
+                        </div>
+                    </div>
+                    {/* Kart boyutu düzenlendi: Container genişliği sınırlandı ve metin büyütüldü */}
+                    <div className="grid grid-cols-4 gap-2 sm:gap-4 max-w-[320px] mx-auto w-full">
+                        {cards.map(card => {
+                            const isFlipped = card === choiceOne || card === choiceTwo || card.matched;
+                            return (
+                                <div 
+                                    key={card.id} 
+                                    className="relative aspect-square cursor-pointer"
+                                    onClick={() => !disabled && !card.matched && card !== choiceOne ? handleChoice(card) : null}
+                                >
+                                    <div className={`w-full h-full rounded-xl transition-all duration-300 transform flex items-center justify-center text-4xl shadow-sm border-2
+                                        ${isFlipped 
+                                            ? "bg-white border-indigo-500 scale-105" 
+                                            : "bg-indigo-500 border-indigo-600"}`}>
+                                        
+                                        {/* KART İÇERİĞİ: GİZLİYSE SORU İŞARETİ, AÇIKSA EMOJİ */}
+                                        <span className={isFlipped ? "text-black" : "text-white opacity-50"}>
+                                            {isFlipped ? card.src : "?"}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    {gameWon && (
+                        <div className="mt-4 p-3 bg-indigo-100 text-indigo-900 w-full text-center text-sm rounded-xl animate-pulse font-bold border border-indigo-200">
+                            Tebrikler! {timer} saniyede tamamladın. 🧠
+                        </div>
+                    )}
+                    {!gameStarted && !gameWon && (
+                        <p className="mt-2 text-xs text-gray-400">Başlamak için bir karta tıkla</p>
+                    )}
+                </div>
+            );
+        };
+
+        // --- BİLEŞEN 2: HIZLI REFLEKS OYUNU (Dopamin Tetikleyici) ---
+
+        const ReflexGame = () => {
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [score, setScore] = useState(0);
+            const [timeLeft, setTimeLeft] = useState(15);
+            const [position, setPosition] = useState({ top: '50%', left: '50%' });
+            const containerRef = useRef(null);
+
+            const startGame = () => {
+                setScore(0);
+                setTimeLeft(15);
+                setIsPlaying(true);
+                moveTarget();
+            };
+
+            const moveTarget = () => {
+                if (containerRef.current) {
+                    const container = containerRef.current.getBoundingClientRect();
+                    const size = 60; // Hedef boyutu
+                    const maxTop = container.height - size;
+                    const maxLeft = container.width - size;
+                    
+                    const newTop = Math.floor(Math.random() * maxTop);
+                    const newLeft = Math.floor(Math.random() * maxLeft);
+                    
+                    setPosition({ top: `${newTop}px`, left: `${newLeft}px` });
+                }
+            };
+
+            const handleClick = () => {
+                if (isPlaying) {
+                    if (navigator.vibrate) navigator.vibrate(10); // Dokunsal geri bildirim
+                    setScore(prev => prev + 1);
+                    moveTarget();
+                }
+            };
+
+            useEffect(() => {
+                let timer;
+                if (isPlaying && timeLeft > 0) {
+                    timer = setInterval(() => {
+                        setTimeLeft(prev => prev - 1);
+                    }, 1000);
+                } else if (timeLeft === 0) {
+                    setIsPlaying(false);
+                }
+                return () => clearInterval(timer);
+            }, [isPlaying, timeLeft]);
+
+            return (
+                <div className="bg-white p-6 rounded-2xl shadow-lg border-2 border-green-100 flex flex-col items-center select-none mt-6">
+                    <div className="flex justify-between w-full mb-4 items-center">
+                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <Target className="text-green-600" size={20}/> Hızlı Refleks
+                        </h3>
+                        <div className="flex gap-4 text-sm font-bold">
+                            <span className="text-gray-600 bg-gray-100 px-2 py-1 rounded">Süre: {timeLeft}s</span>
+                            <span className="text-green-600 bg-green-100 px-2 py-1 rounded">Skor: {score}</span>
+                        </div>
+                    </div>
+
+                    <div 
+                        ref={containerRef}
+                        className="relative w-full h-48 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 overflow-hidden cursor-crosshair"
+                    >
+                        {!isPlaying && timeLeft === 0 && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-20">
+                                <p className="text-xl font-black text-gray-800 mb-2">Süre Bitti!</p>
+                                <p className="text-green-600 font-bold mb-4">Skorun: {score}</p>
+                                <button 
+                                    onClick={startGame}
+                                    className="bg-green-600 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-green-700 transition"
+                                >
+                                    Tekrar Oyna
+                                </button>
+                            </div>
+                        )}
+
+                        {!isPlaying && timeLeft === 15 && (
+                             <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-20">
+                                <button 
+                                    onClick={startGame}
+                                    className="bg-green-600 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-green-700 transition flex items-center gap-2 animate-pulse"
+                                >
+                                    <Play size={18} fill="currentColor" /> Başla
+                                </button>
+                            </div>
+                        )}
+
+                        {isPlaying && (
+                            <button
+                                onClick={handleClick}
+                                style={{ top: position.top, left: position.left }}
+                                className="absolute w-14 h-14 bg-gradient-to-br from-green-400 to-green-600 rounded-full shadow-lg border-2 border-white active:scale-90 transition-transform duration-75 flex items-center justify-center"
+                            >
+                                <span className="text-white font-bold text-lg opacity-80">+1</span>
+                            </button>
+                        )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2 text-center">Yeşil topa olabildiğince hızlı tıkla! Beynini ödüllendir.</p>
+                </div>
+            );
+        };
+
+        const SmokeFreeApp = () => {
+            const [activeTab, setActiveTab] = useState('guide'); 
+            const [panicMode, setPanicMode] = useState(false);
+            const [guideSection, setGuideSection] = useState('mindset');
+
+            const exitPanicMode = () => {
+                setPanicMode(false);
+                setActiveTab('recovery');
+            };
+
+            // PANİK EKRANI
+            if (panicMode) {
+                return (
+                    <div className="min-h-screen bg-red-50 p-6 flex flex-col font-sans animate-fade-in">
+                        <div className="flex justify-between items-center mb-8">
+                            <h1 className="text-2xl font-black text-red-600 flex items-center gap-3">
+                                <AlertTriangle className="animate-pulse w-8 h-8" /> ACİL DURUM
+                            </h1>
+                            <button 
+                                onClick={exitPanicMode}
+                                className="bg-white text-gray-700 px-6 py-3 rounded-full text-sm font-bold shadow-md hover:bg-gray-100 transition"
+                            >
+                                Kapat
+                            </button>
+                        </div>
+
+                        <div className="text-center mb-8">
+                            <h2 className="text-xl font-bold text-gray-900">Sakin Ol. Derin Nefes Al.</h2>
+                            <p className="text-gray-700 text-base font-medium mt-3 leading-relaxed">
+                                Bu sadece nikotin canavarının ölürken attığı bir çığlık. 
+                                Onu besleme. Şimdi dikkatini dağıt:
+                            </p>
+                        </div>
+
+                        <div className="space-y-6 overflow-y-auto pb-24">
+                            {/* OYUNLAR (Sırası: Önce Hafıza, Sonra Refleks) */}
+                            <MemoryGame />
+                            <ReflexGame />
+                            
+                            <div className="bg-yellow-50 p-6 rounded-2xl border-2 border-yellow-200 mt-6 shadow-sm">
+                                <h3 className="text-lg font-bold text-yellow-900 mb-3 flex items-center gap-2">
+                                    <Zap size={24} /> Acil Durum Mantrası
+                                </h3>
+                                <p className="italic text-yellow-900 text-base font-medium leading-relaxed">
+                                    "Şu an hissettiğim boşluk hissi sigara içme isteği değil, sigaranın yarattığı boşluğun kendisi. İçersem geçmeyecek, yeniden başlayacak."
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <button 
+                            onClick={exitPanicMode}
+                            className="fixed bottom-8 left-6 right-6 bg-gray-900 text-white py-5 rounded-2xl font-bold text-xl shadow-xl hover:bg-black transition transform active:scale-95"
+                        >
+                            Krizi Atlattım 💪
+                        </button>
+                    </div>
+                );
+            }
+
+            // NORMAL EKRAN
+            return (
+                <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-28">
+                    {/* Header */}
+                    <header className="bg-white p-6 rounded-b-[2.5rem] shadow-sm mb-8 sticky top-0 z-10 border-b border-gray-100">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h1 className="text-xl font-black text-gray-900 flex items-center gap-2 tracking-tight">
+                                    <ShieldCheck className="text-teal-600 w-8 h-8" /> DUMANI BIRAK
+                                </h1>
+                                <p className="text-gray-500 text-sm font-semibold mt-1 ml-1">Hayatı Bırakma</p>
+                            </div>
+                            <div className="bg-teal-50 p-3 rounded-full text-teal-600">
+                                <Wind size={24} />
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="px-5 max-w-3xl mx-auto space-y-8">
+                        
+                        {/* VIEW: REHBER */}
+                        {activeTab === 'guide' && (
+                            <div className="space-y-6 animate-fade-in">
+                                
+                                <div className="flex bg-gray-200 p-1.5 rounded-xl mb-6">
+                                    <button 
+                                        onClick={() => setGuideSection('mindset')}
+                                        className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${guideSection === 'mindset' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        Zihniyet
+                                    </button>
+                                    <button 
+                                        onClick={() => setGuideSection('triggers')}
+                                        className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${guideSection === 'triggers' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        Tetikleyiciler
+                                    </button>
+                                     <button 
+                                        onClick={() => setGuideSection('contacts')}
+                                        className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${guideSection === 'contacts' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        İletişim
+                                    </button>
+                                </div>
+
+                                {guideSection === 'mindset' && (
+                                    <div className="grid gap-5">
+                                        <div className="mb-2">
+                                            <h2 className="text-lg font-black text-gray-900">Bakış Açını Değiştir</h2>
+                                            <p className="text-sm font-medium text-gray-500 mt-1">İrade savaşı verme, strateji uygula.</p>
+                                        </div>
+                                        {mindsetStrategies.map((item) => (
+                                            <div key={item.id} className={`p-6 rounded-2xl border-2 ${item.color} shadow-sm hover:shadow-md transition-shadow`}>
+                                                <div className="flex items-start gap-4">
+                                                    <div className="bg-white p-3 rounded-xl shadow-sm shrink-0">{item.icon}</div>
+                                                    <div>
+                                                        <p className="text-base font-bold text-gray-900 mb-2 leading-tight">"{item.concept}"</p>
+                                                        <p className="text-sm font-medium text-gray-700 leading-relaxed">{item.desc}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {guideSection === 'triggers' && (
+                                    <div className="space-y-5">
+                                        <div className="mb-2">
+                                            <h2 className="text-lg font-black text-gray-900">Tetikleyici & Çözüm</h2>
+                                            <p className="text-sm font-medium text-gray-500 mt-1">Bu durumlarla karşılaştığında planın hazır olsun.</p>
+                                        </div>
+                                        {triggersData.map((trigger) => (
+                                            <div key={trigger.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row gap-4 hover:border-teal-200 transition-colors">
+                                                <div className="sm:mt-1">
+                                                    <div className="p-3 bg-gray-50 rounded-xl text-gray-700 inline-block">{trigger.icon}</div>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className="font-bold text-gray-900 text-base mb-1">{trigger.title}</h3>
+                                                    <p className="text-xs font-medium text-red-500 italic mb-3 bg-red-50 p-2 rounded-lg inline-block border border-red-100">{trigger.desc}</p>
+                                                    <div className="text-sm font-medium text-gray-700 bg-teal-50 p-3 rounded-xl border border-teal-100 leading-relaxed">
+                                                        <span className="font-bold text-teal-800 block mb-1">Çözüm:</span> {trigger.solution}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                 {/* YENİ BÖLÜM: İLETİŞİM */}
+                                 {guideSection === 'contacts' && (
+                                    <div className="space-y-5">
+                                        <div className="mb-2">
+                                            <h2 className="text-lg font-black text-gray-900">Profesyonel Destek</h2>
+                                            <p className="text-sm font-medium text-gray-500 mt-1">Yalnız değilsin. Uzman desteği iyileşmeyi hızlandırır.</p>
+                                        </div>
+                                        {supportContacts.map((contact) => (
+                                            <div key={contact.id} className={`p-5 rounded-2xl border flex items-center gap-4 hover:shadow-md transition-shadow ${contact.type === 'general' ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-white'}`}>
+                                                <div className={`p-3 rounded-full shrink-0 ${contact.type === 'general' ? 'bg-green-100 text-green-700' : 'bg-blue-50 text-blue-700'}`}>
+                                                    <LifeBuoy size={24} />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className="font-bold text-gray-900 text-base">{contact.title}</h3>
+                                                    <div className="flex items-center gap-2 mt-1 text-gray-700">
+                                                        <MapPin size={14} className="shrink-0 text-gray-400"/>
+                                                        <span className="text-xs font-medium">{contact.address}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <div className={`text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 ${contact.color}`}>
+                                                            <Phone size={12} /> {contact.phone}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* VIEW: İYİLEŞME */}
+                        {activeTab === 'recovery' && (
+                            <div className="animate-fade-in">
+                                <div className="bg-gradient-to-r from-teal-600 to-green-600 p-8 rounded-[2rem] text-white mb-8 shadow-xl relative overflow-hidden">
+                                    <div className="relative z-10">
+                                        <h2 className="text-xl font-black flex items-center gap-3">
+                                            <Trophy className="text-yellow-300 w-8 h-8" /> Vücudun Yenileniyor
+                                        </h2>
+                                        <p className="text-teal-100 text-base font-medium mt-2">Her temiz nefeste iyileşme devam ediyor.</p>
+                                    </div>
+                                    <div className="absolute right-0 top-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                                </div>
+                                
+                                <div className="space-y-6 pl-2">
+                                    {timelineData.map((item, index) => (
+                                        <div key={index} className="flex gap-5 items-start group">
+                                            <div className="flex flex-col items-center">
+                                                <div className="w-4 h-4 bg-teal-500 rounded-full mt-2 shadow-md ring-4 ring-teal-50 group-hover:ring-teal-100 transition-all"></div>
+                                                {index !== timelineData.length - 1 && <div className="w-0.5 h-full bg-gray-200 my-2 rounded-full"></div>}
+                                            </div>
+                                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex-1 hover:shadow-md transition-shadow">
+                                                <h4 className="font-black text-teal-800 text-base mb-2">{item.time}</h4>
+                                                <p className="text-gray-700 text-sm font-medium leading-relaxed">{item.benefit}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Bottom Navigation */}
+                    <nav className="fixed bottom-0 w-full bg-white border-t border-gray-200 pb-safe shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.05)] z-50">
+                        <div className="max-w-3xl mx-auto flex justify-between items-center h-24 px-8 relative">
+                            
+                            <button 
+                                onClick={() => setActiveTab('guide')}
+                                className={`flex flex-col items-center justify-center space-y-1.5 w-20 transition-colors ${activeTab === 'guide' ? 'text-teal-700' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                <BookOpen size={28} strokeWidth={activeTab === 'guide' ? 2.5 : 2} />
+                                <span className="text-xs font-bold tracking-wide">Rehber</span>
+                            </button>
+
+                            {/* CENTRAL PANIC BUTTON */}
+                            <div className="absolute left-1/2 -translate-x-1/2 -top-8">
+                                <button 
+                                    onClick={() => setPanicMode(true)}
+                                    className="w-24 h-24 bg-gradient-to-b from-red-500 to-red-600 rounded-full shadow-2xl border-[6px] border-white flex flex-col items-center justify-center text-white active:scale-95 transition-transform group hover:scale-105"
+                                >
+                                    <AlertTriangle size={36} className="animate-pulse group-hover:scale-110 transition duration-300" />
+                                    <span className="text-xs font-black mt-1 tracking-wider">PANİK</span>
+                                </button>
+                            </div>
+
+                            <button 
+                                onClick={() => setActiveTab('recovery')}
+                                className={`flex flex-col items-center justify-center space-y-1.5 w-20 transition-colors ${activeTab === 'recovery' ? 'text-teal-700' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                <Activity size={28} strokeWidth={activeTab === 'recovery' ? 2.5 : 2} />
+                                <span className="text-xs font-bold tracking-wide">İyileşme</span>
+                            </button>
+
+                        </div>
+                    </nav>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<SmokeFreeApp />);
+    </script>
+</body>
+</html>
